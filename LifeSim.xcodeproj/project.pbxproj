@@ -90,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				79E79074220979560043D5E3 /* AppDelegate.swift */,
+				79614393220E0CF500F3CAB5 /* Settings.swift */,
 				79E790782209795B0043D5E3 /* Assets.xcassets */,
 				7961438E220E09E000F3CAB5 /* Bots */,
 				7961438C220DD70D00F3CAB5 /* Command.swift */,
@@ -98,7 +99,6 @@
 				792689C222D689050038DAF7 /* World */,
 				79E7907E2209795B0043D5E3 /* LifeSim.entitlements */,
 				79E7907A2209795B0043D5E3 /* Main.storyboard */,
-				79614393220E0CF500F3CAB5 /* Settings.swift */,
 			);
 			path = LifeSim;
 			sourceTree = "<group>";
