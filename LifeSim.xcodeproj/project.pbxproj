@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		792689C422D689280038DAF7 /* Cell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 792689C322D689280038DAF7 /* Cell.swift */; };
 		7961438D220DD70D00F3CAB5 /* Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7961438C220DD70D00F3CAB5 /* Command.swift */; };
-		79614390220E0A0000F3CAB5 /* HerbivorousBot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7961438F220E0A0000F3CAB5 /* HerbivorousBot.swift */; };
-		79614392220E0A0900F3CAB5 /* PredatorBot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79614391220E0A0900F3CAB5 /* PredatorBot.swift */; };
 		79614394220E0CF500F3CAB5 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79614393220E0CF500F3CAB5 /* Settings.swift */; };
 		79E79075220979560043D5E3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E79074220979560043D5E3 /* AppDelegate.swift */; };
 		79E79077220979560043D5E3 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E79076220979560043D5E3 /* ViewController.swift */; };
@@ -24,8 +22,6 @@
 /* Begin PBXFileReference section */
 		792689C322D689280038DAF7 /* Cell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cell.swift; sourceTree = "<group>"; };
 		7961438C220DD70D00F3CAB5 /* Command.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Command.swift; sourceTree = "<group>"; };
-		7961438F220E0A0000F3CAB5 /* HerbivorousBot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerbivorousBot.swift; sourceTree = "<group>"; };
-		79614391220E0A0900F3CAB5 /* PredatorBot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredatorBot.swift; sourceTree = "<group>"; };
 		79614393220E0CF500F3CAB5 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		79E79071220979560043D5E3 /* LifeSim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeSim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		79E79074220979560043D5E3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -64,8 +60,6 @@
 			isa = PBXGroup;
 			children = (
 				79E790862209A03A0043D5E3 /* Bot.swift */,
-				7961438F220E0A0000F3CAB5 /* HerbivorousBot.swift */,
-				79614391220E0A0900F3CAB5 /* PredatorBot.swift */,
 			);
 			path = Bots;
 			sourceTree = "<group>";
@@ -174,9 +168,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				79614390220E0A0000F3CAB5 /* HerbivorousBot.swift in Sources */,
 				79E790892209B37C0043D5E3 /* Extensions.swift in Sources */,
-				79614392220E0A0900F3CAB5 /* PredatorBot.swift in Sources */,
 				79E79077220979560043D5E3 /* ViewController.swift in Sources */,
 				79E790872209A03A0043D5E3 /* Bot.swift in Sources */,
 				79E79075220979560043D5E3 /* AppDelegate.swift in Sources */,

@@ -24,18 +24,19 @@ enum WorldSituation {
 }
 
 // MARK: -
+
 // ================================================================================
 
 class LifeFieldView: NSView {
   var displayLink: CVDisplayLink?
   var currentTick: Int = 0
+  var numberOfBots: Int = 0
   
   var tileHeight: CGFloat = 0
   var tileWidth: CGFloat = 0
   
   var cells = [[Cell]]()
   
-  var bots = Set<Bot>()
   var currentBot: Bot?
   
   var context: CGContext? {
@@ -64,7 +65,7 @@ class LifeFieldView: NSView {
                                       _: CVOptionFlags,
                                       _: UnsafeMutablePointer<CVOptionFlags>,
                                       sourceUnsafeRaw: UnsafeMutableRawPointer?) -> CVReturn in
-                                    
+                                     
                                      if let sourceUnsafeRaw = sourceUnsafeRaw {
                                        let mySelf = Unmanaged<LifeFieldView>.fromOpaque(sourceUnsafeRaw).takeUnretainedValue()
                                        DispatchQueue.main.sync {
@@ -72,9 +73,9 @@ class LifeFieldView: NSView {
                                          _ = Unmanaged<LifeFieldView>.fromOpaque(sourceUnsafeRaw).retain()
                                        }
                                      }
-                                    
+                                     
                                      return kCVReturnSuccess
-                                    
+                                     
     }, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()))
     CVDisplayLinkStart(displayLink!)
   }
@@ -96,15 +97,17 @@ class LifeFieldView: NSView {
   func worldTick() {
     currentTick += 1
     
-    var stepsInTick = STEPS_IN_TICK
-    print("Tick:", currentTick, "BOTS[\(bots.count)]")
-
-    if !bots.isEmpty {
+    var stepsInTick = min(STEPS_IN_TICK, numberOfBots)
+    print("Tick:", currentTick, " BOTS:", numberOfBots)
+    
+    if numberOfBots <= 0 {
+      createLife()
+    } else {
       while stepsInTick > 0 {
         if let currBot = currentBot {
           currBot.step { [weak self] situation in
             self?.handleSituation(situation)
-
+            
             var next = currBot.nextBot
             if next!.isAdam {
               next = next!.nextBot
@@ -114,8 +117,6 @@ class LifeFieldView: NSView {
           stepsInTick -= 1
         }
       }
-    } else {
-      createLife()
     }
     
     layer?.sublayers?.removeAll()
@@ -125,9 +126,11 @@ class LifeFieldView: NSView {
   // MARK: - Draw
   
   private func drawBots() {
-    bots.forEach({ [weak self] in
-      let coord = $0.coord
-      let color = $0.color
+    guard let startDrawingBot = currentBot else { return }
+    
+    func drawBot(_ bot: Bot) -> Bot? {
+      let coord = bot.coord
+      let color = bot.color
       
       let botLayer = CALayer()
       botLayer.frame = CGRect(x: tileWidth * CGFloat(coord.x) + 0.5,
@@ -136,9 +139,17 @@ class LifeFieldView: NSView {
                               height: tileHeight - 1)
       botLayer.backgroundColor = color.cgColor
       
-      self?.layer?.addSublayer(botLayer)
+      layer?.addSublayer(botLayer)
       
-    })
+      return bot.nextBot
+    }
+    
+    var nextBot = drawBot(startDrawingBot)
+    while nextBot != nil {
+      guard let bot = nextBot else { break }
+      guard nextBot != startDrawingBot else { break }
+      nextBot = drawBot(bot)
+    }
   }
   
   // MARK: - Bot interface
@@ -150,7 +161,7 @@ class LifeFieldView: NSView {
   // MARK: -
   
   func createLife() {
-    let coord = Coord(x: WORLD_COLUMNS / 2, y: WORLD_ROWS * 7 / 8)
+    let coord = Coord(x: WORLD_COLUMNS - 1, y: WORLD_ROWS - 1)
     handleSituation(.lifeCreated(coord))
   }
   
@@ -188,10 +199,10 @@ class LifeFieldView: NSView {
       let adam = Bot(world: self, coord: coord, color: .white, geneticCode: geneticCode)
       adam.isAdam = true
       
-      let first = HerbivorousBot(world: self,
-                                 coord: coord,
-                                 color: .orange,
-                                 geneticCode: geneticCode)
+      let first = Bot(world: self,
+                      coord: coord,
+                      color: .orange,
+                      geneticCode: geneticCode)
       adam.nextBot = first
       adam.prevBot = first
       first.prevBot = adam
@@ -202,7 +213,7 @@ class LifeFieldView: NSView {
       
     case .botWasBorn(let bot):
       cells[bot.coord.y][bot.coord.x].state = .fill(bot)
-      bots.insert(bot)
+      numberOfBots += 1
     case .botPhotosynthesised(let bot):
       let energy = lightValue(for: bot.coord) * 2
       bot.addEnergy(Int(energy))
@@ -234,12 +245,8 @@ class LifeFieldView: NSView {
         guard let direction = directions.randomElement() else { break }
         let coord = bot.coord.moved(to: direction)
         
-//        print("Bot want eat. Bot Coord:", bot.coord.x, bot.coord.y, "direction coord:", coord.x, coord.y)
-//        print("ROWS:", cells.first!.count, "COLUMNS:", cells.count)
-        
         if coord.isValid,
           let victim = cells[coord.y][coord.x].bot,
-          !victim.isSameType(as: bot),
           victim.isDead || bot.energy > victim.energy {
           bot.addEnergy(victim.body)
           victim.isGone = true
@@ -259,11 +266,6 @@ class LifeFieldView: NSView {
         cells[newCoord.y][newCoord.x].state = .fill(bot)
       }
       
-//    case .botDecomposed(let bot):
-//      let energy = Double(bot.body) * 0.5
-//      let energy = lightValue(for: bot.coord) * 2
-//      bot.addBody(-(Int(energy) + 1))
-      
     case .botWasGone(let bot):
       cells[bot.coord.y][bot.coord.x].state = .empty
       
@@ -273,7 +275,7 @@ class LifeFieldView: NSView {
       pBot?.nextBot = nBot
       nBot?.prevBot = pBot
       
-      bots.remove(bot)
+      numberOfBots -= 1
     }
   }
 }

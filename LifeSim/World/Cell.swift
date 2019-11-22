@@ -67,6 +67,12 @@ struct Coord {
     case .left: x -= 1
     }
     
+    if x < 0 {
+      x = WORLD_COLUMNS - 1
+    } else if x >= WORLD_COLUMNS {
+      x = 0
+    }
+    
     return Coord(x: x, y: y)
   }
   

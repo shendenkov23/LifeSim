@@ -8,6 +8,20 @@
 
 import Cocoa
 
+struct BotColor {
+  let red: CGFloat
+  let green: CGFloat
+  let blue: CGFloat
+  
+  static var white: BotColor {
+    return .init(red: 1.0, green: 1.0, blue: 1.0)
+  }
+  
+  static var orange: BotColor {
+    return .init(red: 1.0, green: 0.5, blue: 0)
+  }
+}
+
 class Bot {
   var isGone = false
   
@@ -15,15 +29,23 @@ class Bot {
   
   let world: LifeFieldView
   
-  //MARK: -
+  var color: NSColor {
+    let ageCoef = CGFloat(age) / CGFloat(maxAge)
+    let offset: CGFloat = 0.7
+    let alpha = ageCoef * (1 - offset) + offset
+    return NSColor(calibratedRed: botColor.red, green: botColor.green, blue: botColor.blue, alpha: alpha)
+  }
+  
+  // MARK: -
   
   var isAdam: Bool = false
   
   private(set) var isDead = false
   
   private(set) var coord: Coord
-  private(set) var color: NSColor
+  private(set) var botColor: BotColor
   
+  private(set) var maxAge: Int
   private(set) var age: Int = 0
   
   private(set) var body: Int = MAX_BODY
@@ -35,28 +57,25 @@ class Bot {
   var nextBot: Bot?
   var prevBot: Bot?
   
-  var maxAge: Int {
-    return 0
-  }
-  
   var possibleCommands: [Command] {
     return Command.allCases
   }
   
-  //MARK: -
+  // MARK: -
   
-  init(world: LifeFieldView, coord: Coord, color: NSColor, geneticCode: [Command]) {
+  init(world: LifeFieldView, coord: Coord, color: BotColor, geneticCode: [Command]) {
     ID = UUID().uuidString
     
     self.world = world
     
     self.coord = coord
-    self.color = color
+    self.botColor = color
     
+    maxAge = Bot.maxAge(for: geneticCode)
     self.geneticCode = geneticCode
   }
   
-  //MARK: -
+  // MARK: -
   
   func addEnergy(_ value: Int) {
     energy += value
@@ -82,19 +101,9 @@ class Bot {
       handleLiveStep(resultHandler: resultHandler)
   }
   
-  func isSameType(as bot: Bot) -> Bool {
-    if self is HerbivorousBot {
-      return bot is HerbivorousBot
-    } else if self is PredatorBot {
-      return bot is PredatorBot
-    }
-    return false
-  }
-  
-  //MARK: -
+  // MARK: -
   
   private func handleLiveStep(resultHandler: (WorldSituation) -> ()) {
-
     age += 1
     energy -= ENERGY_STEP
     
@@ -105,12 +114,7 @@ class Bot {
       resultHandler(.botDied(self))
       return
     }
-    
-    color = NSColor(calibratedRed: color.redComponent,
-                    green: color.greenComponent,
-                    blue: color.blueComponent,
-                    alpha: 1.0 - (CGFloat(age) / CGFloat(maxAge)) + 0.25)
-    
+        
     let command = geneticCode[genIndex]
     
 //    print("COMMAND \(genIndex):", command)
@@ -119,13 +123,13 @@ class Bot {
     case .move: resultHandler(.botWantMove(self))
     case .reproduction:
       if let newBot = reproduction(with: 1) {
-        newBot.prevBot = self.prevBot
-        self.prevBot?.nextBot = newBot
+        newBot.prevBot = prevBot
+        prevBot?.nextBot = newBot
         
-        self.prevBot = newBot
+        prevBot = newBot
         newBot.nextBot = self
         
-        resultHandler( .botWasBorn(newBot) )
+        resultHandler(.botWasBorn(newBot))
       }
     case .photosynthesis:
       resultHandler(.botPhotosynthesised(self))
@@ -137,74 +141,16 @@ class Bot {
   }
   
   private func handleDeadStep(resultHandler: (WorldSituation) -> ()) {
-//    resultHandler(.botDecomposed(self))
-    
-//    guard body > 0 else {
-      resultHandler(.botWasGone(self))
-//      return
-//    }
-    
-//    resultHandler(.botFalling(self))
-  }
-  
-  private func color(for genom: [Command]) -> NSColor {
-    let numOfPhotosynthesis = genom.histogram[.photosynthesis] ?? 0
-    let numOfEat = genom.histogram[.eat] ?? 0
-//    let numOfMoved = genom.histogram[.move] ?? 0
-    let numOfReproductivity = genom.histogram[.reproduction] ?? 0
-//    let numOfDarkness = genom.histogram[.empty] ?? 0
-
-    let partOfGeneticSize = GENETIC_CODE_SIZE / 4
-    
-    var red = numOfEat
-    var green = numOfPhotosynthesis
-    var blue = numOfReproductivity
-    let coef = 10
-    
-    if numOfEat > partOfGeneticSize {
-      red = partOfGeneticSize + coef * (numOfEat - partOfGeneticSize)
-    }
-    if numOfPhotosynthesis > partOfGeneticSize {
-      green = partOfGeneticSize + coef * (numOfPhotosynthesis - partOfGeneticSize)
-    }
-    if numOfReproductivity > partOfGeneticSize {
-      blue = partOfGeneticSize + coef * (numOfReproductivity - partOfGeneticSize)
-    }
-    
-    return NSColor(calibratedRed: CGFloat(red) / CGFloat(GENETIC_CODE_SIZE),
-                   green: CGFloat(green) / CGFloat(GENETIC_CODE_SIZE),
-                   blue: CGFloat(blue) / CGFloat(GENETIC_CODE_SIZE),
-                   alpha: self.color.alphaComponent)
-    
-//    let maximum = max(numOfPhotosynthesis, numOfMoved, numOfReproductivity, numOfDarkness)
-//    if maximum == numOfPhotosynthesis {
-//      //GREEN
-//      return NSColor(calibratedRed: 0.0, green: 1.0, blue: 0.0,
-//                           alpha: self.color.alphaComponent)
-//    } else if maximum == numOfMoved {
-//      //RED
-//      return NSColor(calibratedRed: 1.0, green: 0.0, blue: 0.0,
-//                           alpha: self.color.alphaComponent)
-//    } else if maximum == numOfReproductivity {
-//      //BLUE
-//      return NSColor(calibratedRed: 0.0, green: 0.0, blue: 1.0,
-//                           alpha: self.color.alphaComponent)
-//    } else if maximum == numOfDarkness {
-//      //GRAY
-//      return NSColor(calibratedRed: 0.5, green: 0.5, blue: 0.5,
-//                           alpha: self.color.alphaComponent)
-//    }
-//
-//    return NSColor.purple //TODO: remove
+    resultHandler(.botWasGone(self))
   }
   
   private func mutate(with index: Int) {
     for _ in 1...index {
       let newCommand = possibleCommands.randomElement() ?? .empty
-        //Command(rawValue: Int.random(in: 0...(Command.allCases.count - 1))) ?? .empty
+      // Command(rawValue: Int.random(in: 0...(Command.allCases.count - 1))) ?? .empty
       geneticCode[Int.random(in: 0...(GENETIC_CODE_SIZE - 1))] = newCommand
       
-      self.color = color(for: geneticCode)
+      botColor = color(for: geneticCode)
     }
   }
   
@@ -221,10 +167,33 @@ class Bot {
   }
 }
 
-//MARK: - Commands
+// MARK: - Genom Utils
 
 extension Bot {
+  private func color(for genom: [Command]) -> BotColor {
+    let numOfPhotosynthesis = genom.histogram[.photosynthesis] ?? 0
+    let numOfEat = genom.histogram[.eat] ?? 0
+    let numOfReproductivity = genom.histogram[.reproduction] ?? 0
+    
+    let red = numOfEat
+    let green = numOfPhotosynthesis
+    let blue = numOfReproductivity
+    
+    let summ = red + green + blue
+    
+    return BotColor(red: CGFloat(red) / CGFloat(summ),
+                    green: CGFloat(green) / CGFloat(summ),
+                    blue: CGFloat(blue) / CGFloat(summ))
+  }
   
+  private static func maxAge(for geneticCode: [Command]) -> Int {
+    return 100
+  }
+}
+
+// MARK: - Commands
+
+extension Bot {
   func reproduction(with mutateIndex: Int) -> Bot? {
     guard Double(energy) > Double(MAX_ENERGY) * 0.75 else { return nil }
     
@@ -235,36 +204,11 @@ extension Bot {
       let newCoord = coord.moved(to: direction)
       
       if world.canReproduce(coord: newCoord) {
-        let newColor = NSColor(calibratedRed: color.redComponent,
-                               green: color.greenComponent,
-                               blue: color.blueComponent,
-                               alpha: 1.0)
         energy /= 2
         
-        var bot: Bot?
-        if self is HerbivorousBot {
-          
-          if Int.random(in: 0...10) == 0, coord.y < WORLD_ROWS / 2 {
-            let geneticCode = self.geneticCode.map({ return $0 == Command.photosynthesis ? Command.eat : $0 })
-            
-            bot = PredatorBot(world: world, coord: newCoord, color: newColor, geneticCode: geneticCode)
-            bot?.energy = energy
-            bot?.mutate(with: mutateIndex)
-          } else {
-            bot = HerbivorousBot(world: world, coord: newCoord, color: newColor, geneticCode: geneticCode)
-            bot?.energy = energy
-            bot?.mutate(with: mutateIndex)
-          }
-          
-        } else if self is PredatorBot {
-          bot = PredatorBot(world: world, coord: newCoord, color: newColor, geneticCode: geneticCode)
-          bot?.energy = energy
-          bot?.mutate(with: mutateIndex)
-        } else {
-          bot = Bot(world: world, coord: newCoord, color: newColor, geneticCode: geneticCode)
-          bot?.energy = energy
-          bot?.mutate(with: mutateIndex)
-        }
+        let bot = Bot(world: world, coord: newCoord, color: botColor, geneticCode: geneticCode)
+        bot.energy = energy
+        bot.mutate(with: mutateIndex)
         
         return bot
       } else {
@@ -274,9 +218,9 @@ extension Bot {
   }
 }
 
+// MARK: - Hashable
 
 extension Bot: Hashable {
-  
   func hash(into hasher: inout Hasher) {
     ID.hash(into: &hasher)
   }
