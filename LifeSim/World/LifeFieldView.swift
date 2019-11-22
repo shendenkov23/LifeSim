@@ -118,36 +118,26 @@ class LifeFieldView: NSView {
       createLife()
     }
     
-    needsDisplay = true
+    layer?.sublayers?.removeAll()
+    drawBots()
   }
   
   // MARK: - Draw
   
-  override func draw(_ dirtyRect: NSRect) {
-    super.draw(dirtyRect)
-//    drawDebugCells()
-//    drawGrid()
-    
-    drawBots()
-  }
-  
   private func drawBots() {
-    bots.forEach({
+    bots.forEach({ [weak self] in
       let coord = $0.coord
       let color = $0.color
       
-      let path = CGMutablePath()
-      path.addRect(CGRect(x: tileWidth * CGFloat(coord.x) + 0.5,
-                          y: tileHeight * CGFloat(coord.y) + 0.5,
-                          width: tileWidth - 1,
-                          height: tileHeight - 1))
-      path.closeSubpath()
+      let botLayer = CALayer()
+      botLayer.frame = CGRect(x: tileWidth * CGFloat(coord.x) + 0.5,
+                              y: tileHeight * CGFloat(coord.y) + 0.5,
+                              width: tileWidth - 1,
+                              height: tileHeight - 1)
+      botLayer.backgroundColor = color.cgColor
       
-      context?.addPath(path)
+      self?.layer?.addSublayer(botLayer)
       
-      context?.setLineWidth(0.0)
-      context?.setFillColor(color.cgColor)
-      context?.drawPath(using: .fillStroke)
     })
   }
   
@@ -285,68 +275,5 @@ class LifeFieldView: NSView {
       
       bots.remove(bot)
     }
-  }
-}
-
-// MARK: - DEBUG
-
-extension LifeFieldView {
-  private func drawGrid() {
-    for row in 0...WORLD_ROWS {
-      if row % 5 == 0 {
-        let y = tileHeight * CGFloat(row)
-        
-        let path = CGMutablePath()
-        
-        path.move(to: CGPoint(x: 0, y: y))
-        path.addLine(to: CGPoint(x: bounds.width, y: y))
-        path.closeSubpath()
-        
-        context?.addPath(path)
-      }
-    }
-    for column in 0...WORLD_COLUMNS {
-      if column % 5 == 0 {
-        let x = tileWidth * CGFloat(column)
-        
-        let path = CGMutablePath()
-        
-        path.move(to: CGPoint(x: x, y: 0))
-        path.addLine(to: CGPoint(x: x, y: bounds.height))
-        path.closeSubpath()
-        
-        context?.addPath(path)
-      }
-    }
-    
-    context?.setLineWidth(1.0)
-    context?.setStrokeColor(NSColor.black.cgColor)
-    context?.drawPath(using: .fillStroke)
-  }
-  
-  func drawDebugCells() {
-    cells.enumerated().forEach({ rowTuple in
-      
-      rowTuple.element.enumerated().forEach({ cellTuple in
-        
-        let coord = Coord(x: cellTuple.offset, y: rowTuple.offset)
-        
-        let path = CGMutablePath()
-        path.addRect(CGRect(x: tileWidth * CGFloat(coord.x),
-                            y: tileHeight * CGFloat(coord.y),
-                            width: tileWidth,
-                            height: tileHeight))
-        path.closeSubpath()
-        
-        context?.addPath(path)
-        context?.setLineWidth(0.0)
-        
-        let light = lightValue(for: coord)
-        let color = NSColor(calibratedWhite: CGFloat(light) / CGFloat(MAX_LIGHT_VALUE), alpha: 1.0)
-        
-        context?.setFillColor(color.cgColor)
-        context?.drawPath(using: .fillStroke)
-      })
-    })
   }
 }
